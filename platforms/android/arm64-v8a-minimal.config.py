@@ -70,6 +70,7 @@ ABIs = [
             BUILD_opencv_ts="OFF",
             BUILD_opencv_video="OFF",
             BUILD_opencv_videoio="OFF",
+            BUILD_opencv_world="OFF",
             INSTALL_ANDROID_EXAMPLES="OFF",
         ),
     ),
