@@ -67,9 +67,43 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ant ninja-build ccache
 
-      - name: Patch SDK script for minimal build
+      - name: Patch SDK script and Java sources for minimal build
         run: |
-          python3 -c 'from pathlib import Path; p=Path("platforms/android/build_sdk.py"); s=p.read_text(); s=s.replace("        if do_install:\n            build_targets.append(\"opencv_tests\")\n", "        if do_install and not self.no_samples_build:\n            build_targets.append(\"opencv_tests\")\n"); s=s.replace("if abi.haveKleidiCV():", "if False and abi.haveKleidiCV():"); p.write_text(s)'
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          sdk_script = Path("platforms/android/build_sdk.py")
+          text = sdk_script.read_text()
+          text = text.replace(
+              "        if do_install:\n            build_targets.append(\"opencv_tests\")\n",
+              "        if do_install and not self.no_samples_build:\n            build_targets.append(\"opencv_tests\")\n",
+          )
+          text = text.replace("if abi.haveKleidiCV():", "if False and abi.haveKleidiCV():")
+          sdk_script.write_text(text)
+
+          native_camera = Path("modules/java/generator/android-24/java/org/opencv/android/NativeCameraView.java")
+          native_camera.unlink()
+
+          utils = Path("modules/java/generator/android/java/org/opencv/android/Utils.java")
+          text = utils.read_text()
+          text = text.replace("import org.opencv.imgcodecs.Imgcodecs;\n", "")
+          text = text.replace("import java.io.ByteArrayOutputStream;\n", "")
+          text = text.replace("import java.io.IOException;\n", "")
+          text = re.sub(
+              r"\n    public static Mat loadResource\(Context context, int resourceId\) throws IOException\n    \{.*?\n    \}\n",
+              "\n",
+              text,
+              flags=re.S,
+          )
+          text = re.sub(
+              r"\n    public static Mat loadResource\(Context context, int resourceId, int flags\) throws IOException\n    \{.*?\n    \}\n",
+              "\n",
+              text,
+              flags=re.S,
+          )
+          utils.write_text(text)
+          PY
 
       - name: Build minimal OpenCV Android SDK
         run: |
