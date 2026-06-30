@@ -127,7 +127,6 @@ jobs:
             --ndk_path "${ANDROID_NDK}" \
             --config "${GITHUB_WORKSPACE}/platforms/android/arm64-v8a-minimal.config.py" \
             --modules_list core,imgproc,java,java_bindings_generator \
-            --shared \
             --no_samples_build \
             --no_media_ndk \
             --disable TBB \
@@ -149,6 +148,14 @@ jobs:
             --disable GSTREAMER \
             --disable V4L \
             --disable KLEIDICV
+
+      - name: Verify OpenCV native dependencies are bundled
+        run: |
+          readelf -d "${OPENCV_SDK_DIR}/sdk/native/libs/arm64-v8a/libopencv_java4.so"
+          if readelf -d "${OPENCV_SDK_DIR}/sdk/native/libs/arm64-v8a/libopencv_java4.so" | grep -E 'libopencv_(core|imgproc)\.so'; then
+            echo "libopencv_java4.so still depends on separate OpenCV module libraries" >&2
+            exit 1
+          fi
 
       - name: Build Maven AAR
         run: |
