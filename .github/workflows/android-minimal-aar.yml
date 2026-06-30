@@ -89,7 +89,6 @@ jobs:
           text = utils.read_text()
           text = text.replace("import org.opencv.imgcodecs.Imgcodecs;\n", "")
           text = text.replace("import java.io.ByteArrayOutputStream;\n", "")
-          text = text.replace("import java.io.IOException;\n", "")
           def remove_java_method(source, signature):
               start = source.index("\n    " + signature)
               brace = source.index("{", start)
