@@ -9,6 +9,7 @@ ABIs = [
         None,
         23,
         cmake_vars=dict(
+            ANDROID_PROJECTS_BUILD_TYPE="GRADLE",
             ANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES="ON",
             WITH_ADE="OFF",
             WITH_ANDROID_MEDIANDK="OFF",
@@ -57,6 +58,7 @@ ABIs = [
             BUILD_opencv_gapi="OFF",
             BUILD_opencv_highgui="OFF",
             BUILD_opencv_imgcodecs="OFF",
+            BUILD_opencv_java="ON",
             BUILD_opencv_java_bindings_generator="ON",
             BUILD_opencv_js_bindings_generator="OFF",
             BUILD_opencv_ml="OFF",
