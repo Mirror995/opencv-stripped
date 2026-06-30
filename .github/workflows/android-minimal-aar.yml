@@ -79,7 +79,7 @@ jobs:
             --sdk_path "${ANDROID_SDK}" \
             --ndk_path "${ANDROID_NDK}" \
             --config "${GITHUB_WORKSPACE}/platforms/android/arm64-v8a-minimal.config.py" \
-            --modules_list core,imgproc,java_bindings_generator \
+            --modules_list core,imgproc,java,java_bindings_generator \
             --shared \
             --no_samples_build \
             --no_media_ndk \
