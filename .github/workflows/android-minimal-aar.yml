@@ -1,0 +1,113 @@
+name: Build Android minimal AAR
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 4.x
+    paths:
+      - .github/workflows/android-minimal-aar.yml
+      - platforms/android/arm64-v8a-minimal.config.py
+      - platforms/android/**
+      - modules/java/**
+      - modules/core/**
+      - modules/imgproc/**
+      - cmake/**
+      - CMakeLists.txt
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-minimal-aar-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: arm64-v8a java/core/imgproc
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+
+    env:
+      OPENCV_VERSION: 4.13.0
+      ANDROID_COMPILE_SDK: 35
+      ANDROID_BUILD_TOOLS: 35.0.0
+      ANDROID_NDK_VERSION: 27.2.12479018
+      OPENCV_BUILD_DIR: ${{ github.workspace }}/build-android
+      OPENCV_SDK_DIR: ${{ github.workspace }}/build-android/OpenCV-android-sdk
+      OPENCV_GRADLE_VERBOSE_OPTIONS: --no-daemon --stacktrace
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android packages
+        run: |
+          sdkmanager --install \
+            "platforms;android-${ANDROID_COMPILE_SDK}" \
+            "build-tools;${ANDROID_BUILD_TOOLS}" \
+            "ndk;${ANDROID_NDK_VERSION}"
+          echo "ANDROID_NDK=${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}" >> "$GITHUB_ENV"
+
+      - name: Install host build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ninja-build ccache
+
+      - name: Build minimal OpenCV Android SDK
+        run: |
+          python3 platforms/android/build_sdk.py \
+            "${OPENCV_BUILD_DIR}" \
+            "${GITHUB_WORKSPACE}" \
+            --config "${GITHUB_WORKSPACE}/platforms/android/arm64-v8a-minimal.config.py" \
+            --modules_list java,core,imgproc \
+            --no_samples_build \
+            --no_media_ndk \
+            --disable TBB \
+            --disable OPENMP \
+            --disable IPP \
+            --disable ITT \
+            --disable EIGEN \
+            --disable ADE \
+            --disable PROTOBUF \
+            --disable QUIRC \
+            --disable JPEG \
+            --disable PNG \
+            --disable TIFF \
+            --disable WEBP \
+            --disable OPENJPEG \
+            --disable JASPER \
+            --disable OPENEXR \
+            --disable FFMPEG \
+            --disable GSTREAMER \
+            --disable V4L
+
+      - name: Build Maven AAR
+        run: bash platforms/android/build_aar.sh "${OPENCV_SDK_DIR}"
+
+      - name: Print output sizes
+        run: |
+          find "${OPENCV_SDK_DIR}" -path '*/arm64-v8a/libopencv_java4.so' -print -exec ls -lh {} \;
+          find maven_repo -name '*.aar' -print -exec ls -lh {} \;
+
+      - name: Upload AAR and SDK library
+        uses: actions/upload-artifact@v4
+        with:
+          name: opencv-android-minimal-${{ env.OPENCV_VERSION }}-arm64-v8a
+          if-no-files-found: error
+          path: |
+            maven_repo/**/*.aar
+            maven_repo/**/*.pom
+            ${{ env.OPENCV_SDK_DIR }}/sdk/native/libs/arm64-v8a/libopencv_java4.so
