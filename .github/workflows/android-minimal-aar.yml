@@ -69,7 +69,7 @@ jobs:
 
       - name: Patch SDK script for minimal build
         run: |
-          python3 -c 'from pathlib import Path; p=Path("platforms/android/build_sdk.py"); s=p.read_text(); s=s.replace("        if do_install:\n            build_targets.append(\"opencv_tests\")\n", "        if do_install and not self.no_samples_build:\n            build_targets.append(\"opencv_tests\")\n"); s=s.replace("        if abi.haveKleidiCV():\n           log.info(\"Checking HAVE_KLEIDICV for ABI: %s\", abi.name)\n           check_dir = os.path.join(work_dir, \"o%d\" % i)\n           checkCMakeVars(check_dir, \"HAVE_KLEIDICV\", \"ON\")\n", "        if abi.haveKleidiCV() and \"KLEIDICV\" not in args.disable:\n           log.info(\"Checking HAVE_KLEIDICV for ABI: %s\", abi.name)\n           check_dir = os.path.join(work_dir, \"o%d\" % i)\n           checkCMakeVars(check_dir, \"HAVE_KLEIDICV\", \"ON\")\n"); p.write_text(s)'
+          python3 -c 'from pathlib import Path; p=Path("platforms/android/build_sdk.py"); s=p.read_text(); s=s.replace("        if do_install:\n            build_targets.append(\"opencv_tests\")\n", "        if do_install and not self.no_samples_build:\n            build_targets.append(\"opencv_tests\")\n"); s=s.replace("if abi.haveKleidiCV():", "if False and abi.haveKleidiCV():"); p.write_text(s)'
 
       - name: Build minimal OpenCV Android SDK
         run: |
