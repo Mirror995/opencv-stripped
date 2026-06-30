@@ -90,17 +90,31 @@ jobs:
           text = text.replace("import org.opencv.imgcodecs.Imgcodecs;\n", "")
           text = text.replace("import java.io.ByteArrayOutputStream;\n", "")
           text = text.replace("import java.io.IOException;\n", "")
-          text = re.sub(
-              r"\n    public static Mat loadResource\(Context context, int resourceId\) throws IOException\n    \{.*?\n    \}\n",
-              "\n",
+          def remove_java_method(source, signature):
+              start = source.index("\n    " + signature)
+              brace = source.index("{", start)
+              depth = 0
+              end = brace
+              while end < len(source):
+                  if source[end] == "{":
+                      depth += 1
+                  elif source[end] == "}":
+                      depth -= 1
+                      if depth == 0:
+                          end += 1
+                          if end < len(source) and source[end] == "\n":
+                              end += 1
+                          return source[:start] + "\n" + source[end:]
+                  end += 1
+              raise RuntimeError(f"Method not closed: {signature}")
+
+          text = remove_java_method(
               text,
-              flags=re.S,
+              "public static Mat loadResource(Context context, int resourceId) throws IOException",
           )
-          text = re.sub(
-              r"\n    public static Mat loadResource\(Context context, int resourceId, int flags\) throws IOException\n    \{.*?\n    \}\n",
-              "\n",
+          text = remove_java_method(
               text,
-              flags=re.S,
+              "public static Mat loadResource(Context context, int resourceId, int flags) throws IOException",
           )
           utils.write_text(text)
           PY
