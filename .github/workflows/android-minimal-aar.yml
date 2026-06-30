@@ -67,6 +67,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ninja-build ccache
 
+      - name: Disable SDK test target for minimal build
+        run: |
+          python3 -c 'from pathlib import Path; p=Path("platforms/android/build_sdk.py"); s=p.read_text(); s=s.replace("        if do_install:\n            build_targets.append(\"opencv_tests\")\n", "        if do_install and not self.no_samples_build:\n            build_targets.append(\"opencv_tests\")\n"); p.write_text(s)'
+
       - name: Build minimal OpenCV Android SDK
         run: |
           python3 platforms/android/build_sdk.py \
@@ -75,7 +79,7 @@ jobs:
             --sdk_path "${ANDROID_SDK}" \
             --ndk_path "${ANDROID_NDK}" \
             --config "${GITHUB_WORKSPACE}/platforms/android/arm64-v8a-minimal.config.py" \
-            --modules_list java,core,imgproc \
+            --modules_list core,imgproc,java_bindings_generator \
             --no_samples_build \
             --no_media_ndk \
             --disable TBB \
